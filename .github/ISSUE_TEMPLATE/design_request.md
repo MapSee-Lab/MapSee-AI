@@ -2,7 +2,7 @@
 name: 🎨 디자인 요청
 about: 디자인 관련 요청을 작성
 labels: [작업 전]
-assignees: [Cassiiopeia]
+assignees: [MapSee-Lab]
 ---
 
 <!--📚 GitHub 이슈 작성 템플릿 -->
