@@ -1,0 +1,17 @@
+[project]
+name = "mapsee-ai"
+version = "0.0.2"
+description = "MapSee AI - SNS 콘텐츠 데이터 추출 파이프라인"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.118.0",
+    "faster-whisper>=1.2.0",
+    "google-genai>=1.39.1",
+    "imagehash>=4.3.2",
+    "pillow>=12.0.0",
+    "pydantic-settings>=2.11.0",
+    "uvicorn[standard]>=0.37.0",
+    "yt-dlp>=2025.10.22",
+    "httpx>=0.27.0",
+]
