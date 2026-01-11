@@ -1,11 +1,35 @@
 {
   "metadata": {
-    "lastUpdated": "2026-01-11T15:07:27Z",
-    "currentVersion": "0.0.11",
+    "lastUpdated": "2026-01-11T15:34:03Z",
+    "currentVersion": "0.1.1",
     "projectType": "python",
-    "totalReleases": 1
+    "totalReleases": 2
   },
   "releases": [
+    {
+      "version": "0.1.1",
+      "project_type": "python",
+      "date": "2026-01-11",
+      "pr_number": 8,
+      "raw_summary": "## Summary by CodeRabbit\n\n* **Documentation**\n  * README의 최신 버전 정보를 v0.1.1로 반영하여 업데이트\n\n* **Chores**\n  * 애플리케이션 버전을 0.1.1로 업그레이드하고 버전 메타데이터 갱신\n  * main 브랜치의 푸시 및 풀 요청에 대해 Python FastAPI Docker 빌드를 자동으로 검증하는 CI 워크플로우 추가\n  * Docker 이미지에서 Playwright Chromium 브라우저와 필수 시스템 의존성을 지원하도록 설정",
+      "parsed_changes": {
+        "documentation": {
+          "title": "Documentation",
+          "items": [
+            "README의 최신 버전 정보를 v0.1.1로 반영하여 업데이트"
+          ]
+        },
+        "chores": {
+          "title": "Chores",
+          "items": [
+            "애플리케이션 버전을 0.1.1로 업그레이드하고 버전 메타데이터 갱신",
+            "main 브랜치의 푸시 및 풀 요청에 대해 Python FastAPI Docker 빌드를 자동으로 검증하는 CI 워크플로우 추가",
+            "Docker 이미지에서 Playwright Chromium 브라우저와 필수 시스템 의존성을 지원하도록 설정"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.0.11",
       "project_type": "python",
