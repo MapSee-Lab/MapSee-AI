@@ -23,6 +23,20 @@ uv run python -m src.main
 - **ffmpeg/ffprobe**: 오디오/비디오 처리에 필요
 - **yt-dlp**: Instagram/YouTube 콘텐츠 다운로드에 사용
 
+## 네이밍 규칙
+
+### 파일명
+- 파일명만 보고 역할을 알 수 있어야 함
+- 예: `base.py` ❌ → `playwright_browser.py` ✅
+- 예: `router.py` ❌ → `scrape_router.py` ✅
+
+### 변수/함수명
+- 길어도 명확한 이름 선호
+- 축약어 사용 최소화
+- 예: `desc` ❌ → `description` ✅
+- 예: `res` ❌ → `response` ✅
+- 예: `cnt` ❌ → `count` ✅
+
 ## API 응답 규칙
 
 - `success` 필드 사용 금지 - HTTP 상태 코드로 성공/실패 판단

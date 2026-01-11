@@ -33,8 +33,8 @@
 #   - 서버에 프로젝트 디렉토리 존재
 #
 #   ※ Health Check 방식:
-#     - FastAPI /docs/swagger 엔드포인트 확인
-#     - 폴백: 기동 로그 패턴 확인 ("Uvicorn running on")
+#     - HEALTH_CHECK_PATH로 HTTP 엔드포인트 확인 (기본값: /docs)
+#     - 폴백: HEALTH_CHECK_LOG_PATTERN으로 로그 패턴 매칭
 #
 # 🌐 Traefik 대시보드:
 #   https://traefik.suhsaechan.kr/dashboard/#/
@@ -80,7 +80,20 @@ env:
 
   # Issue Helper 댓글 마커 (프로젝트별 수정 필요)
   # Issue 댓글에서 브랜치명을 추출할 때 사용
-  ISSUE_HELPER_MARKER: 'SUH-ISSUE-HELPER'
+  ISSUE_HELPER_MARKER: 'Guide by SUH-LAB'
+
+  # Health Check 설정 (프로젝트별 수정 필요)
+  # - HEALTH_CHECK_PATH: HTTP Health Check 경로 (빈값이면 HTTP 체크 건너뜀)
+  # - HEALTH_CHECK_LOG_PATTERN: 로그 패턴 매칭 (HTTP 실패 시 폴백)
+  # - API_DOCS_PATH: API 문서 URL (빈값이면 배포 코멘트에 미표시)
+  #
+  # 프레임워크별 기본값 예시:
+  #   FastAPI: '/docs', 'Uvicorn running on|Application startup complete'
+  #   Spring Boot: '/actuator/health', 'Started.*Application|Tomcat started on port'
+  #   Express: '/health', 'Server listening on port'
+  HEALTH_CHECK_PATH: '/docs'
+  HEALTH_CHECK_LOG_PATTERN: 'Uvicorn running on|Application startup complete'
+  API_DOCS_PATH: '/docs'
 
 # ===================================================================
 # 트리거 설정
@@ -351,12 +364,14 @@ jobs:
               "${IMAGE}"
 
             # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            # Health Check (최대 120초 대기) - FastAPI 하이브리드 방식
-            # 1. curl로 /docs/swagger 엔드포인트 확인
-            # 2. 폴백: 로그 패턴 매칭 ("Uvicorn running on" 또는 "Application startup complete")
+            # Health Check (최대 120초 대기) - 하이브리드 방식
+            # 1. HEALTH_CHECK_PATH가 설정되어 있으면 HTTP 체크 시도
+            # 2. 폴백: 로그 패턴 매칭 (HEALTH_CHECK_LOG_PATTERN)
             # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             echo ""
             echo "⏳ Health Check 시작 (최대 120초 대기)..."
+            HEALTH_PATH="${{ env.HEALTH_CHECK_PATH }}"
+            LOG_PATTERN="${{ env.HEALTH_CHECK_LOG_PATTERN }}"
             MAX_RETRIES=24
             RETRY_COUNT=0
             HEALTH_CHECK_PASSED=false
@@ -380,25 +395,29 @@ jobs:
               fi
 
               if [ "$STATUS" = "running" ]; then
-                # 2. FastAPI /docs/swagger Health Check 시도 (curl 사용 - Dockerfile에 설치됨)
-                HEALTH=$(echo $PW | sudo -S docker exec "${CONTAINER_NAME}" curl -sf http://localhost:${INTERNAL_PORT}/docs/swagger 2>/dev/null || echo "")
+                # 2. HTTP Health Check 시도 (HEALTH_CHECK_PATH가 설정된 경우에만)
+                if [ -n "$HEALTH_PATH" ]; then
+                  HEALTH=$(echo $PW | sudo -S docker exec "${CONTAINER_NAME}" curl -sf "http://localhost:${INTERNAL_PORT}${HEALTH_PATH}" 2>/dev/null || echo "")
 
-                if [ -n "$HEALTH" ]; then
-                  echo "✅ FastAPI 정상 기동 확인! (HTTP 응답)"
-                  HEALTH_CHECK_PASSED=true
-                  HEALTH_CHECK_METHOD="HTTP"
-                  break
+                  if [ -n "$HEALTH" ]; then
+                    echo "✅ 정상 기동 확인! (HTTP 응답: ${HEALTH_PATH})"
+                    HEALTH_CHECK_PASSED=true
+                    HEALTH_CHECK_METHOD="HTTP"
+                    break
+                  fi
                 fi
 
                 # 3. HTTP 응답 없으면 로그 패턴 매칭으로 폴백
-                STARTED=$(echo $PW | sudo -S docker logs --tail 50 "${CONTAINER_NAME}" 2>&1 | grep -E "Uvicorn running on|Application startup complete" || echo "")
+                if [ -n "$LOG_PATTERN" ]; then
+                  STARTED=$(echo $PW | sudo -S docker logs --tail 50 "${CONTAINER_NAME}" 2>&1 | grep -E "$LOG_PATTERN" || echo "")
 
-                if [ -n "$STARTED" ]; then
-                  echo "✅ FastAPI 정상 기동 확인! (로그 패턴)"
-                  echo "   $STARTED"
-                  HEALTH_CHECK_PASSED=true
-                  HEALTH_CHECK_METHOD="Log"
-                  break
+                  if [ -n "$STARTED" ]; then
+                    echo "✅ 정상 기동 확인! (로그 패턴)"
+                    echo "   $STARTED"
+                    HEALTH_CHECK_PASSED=true
+                    HEALTH_CHECK_METHOD="Log"
+                    break
+                  fi
                 fi
               fi
 
@@ -436,10 +455,21 @@ jobs:
             const projectName = '${{ env.PROJECT_NAME }}';
             const domainSuffix = '${{ env.PREVIEW_DOMAIN_SUFFIX }}';
             const previewPort = '${{ env.PREVIEW_PORT }}';
+            const apiDocsPath = '${{ env.API_DOCS_PATH }}';
             const prNumber = context.issue.number;
             const domain = `${projectName}-pr-${prNumber}.${domainSuffix}`;
             const previewUrl = `http://${domain}:${previewPort}`;
             const sha = '${{ steps.pr.outputs.sha }}';
+
+            // Preview 환경 테이블 구성 (API_DOCS_PATH가 있을 때만 API Docs 행 추가)
+            const envRows = [
+              `| **Preview URL** | ${previewUrl} |`,
+            ];
+            if (apiDocsPath) {
+              envRows.push(`| **API Docs** | ${previewUrl}${apiDocsPath} |`);
+            }
+            envRows.push(`| **컨테이너** | \`${projectName}-pr-${prNumber}\` |`);
+            envRows.push(`| **커밋** | \`${sha}\` |`);
 
             const body = [
               '## ✅ PR Preview 배포 완료!',
@@ -452,10 +482,7 @@ jobs:
               '### 🌐 Preview 환경',
               '| 항목 | 값 |',
               '|------|-----|',
-              `| **Preview URL** | ${previewUrl} |`,
-              `| **Swagger Docs** | ${previewUrl}/docs/swagger |`,
-              `| **컨테이너** | \`${projectName}-pr-${prNumber}\` |`,
-              `| **커밋** | \`${sha}\` |`,
+              ...envRows,
               '',
               '### 📋 명령어',
               '| 명령어 | 설명 |',
@@ -897,10 +924,14 @@ jobs:
               "${IMAGE}"
 
             # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            # Health Check (최대 120초 대기) - FastAPI 하이브리드 방식
+            # Health Check (최대 120초 대기) - 하이브리드 방식
+            # 1. HEALTH_CHECK_PATH가 설정되어 있으면 HTTP 체크 시도
+            # 2. 폴백: 로그 패턴 매칭 (HEALTH_CHECK_LOG_PATTERN)
             # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             echo ""
             echo "⏳ Health Check 시작 (최대 120초 대기)..."
+            HEALTH_PATH="${{ env.HEALTH_CHECK_PATH }}"
+            LOG_PATTERN="${{ env.HEALTH_CHECK_LOG_PATTERN }}"
             MAX_RETRIES=24
             RETRY_COUNT=0
             HEALTH_CHECK_PASSED=false
@@ -924,25 +955,29 @@ jobs:
               fi
 
               if [ "$STATUS" = "running" ]; then
-                # 2. FastAPI Health Check 시도
-                HEALTH=$(echo $PW | sudo -S docker exec "${CONTAINER_NAME}" curl -sf http://localhost:${INTERNAL_PORT}/docs/swagger 2>/dev/null || echo "")
+                # 2. HTTP Health Check 시도 (HEALTH_CHECK_PATH가 설정된 경우에만)
+                if [ -n "$HEALTH_PATH" ]; then
+                  HEALTH=$(echo $PW | sudo -S docker exec "${CONTAINER_NAME}" curl -sf "http://localhost:${INTERNAL_PORT}${HEALTH_PATH}" 2>/dev/null || echo "")
 
-                if [ -n "$HEALTH" ]; then
-                  echo "✅ FastAPI 정상 기동 확인! (HTTP 응답)"
-                  HEALTH_CHECK_PASSED=true
-                  HEALTH_CHECK_METHOD="HTTP"
-                  break
+                  if [ -n "$HEALTH" ]; then
+                    echo "✅ 정상 기동 확인! (HTTP 응답: ${HEALTH_PATH})"
+                    HEALTH_CHECK_PASSED=true
+                    HEALTH_CHECK_METHOD="HTTP"
+                    break
+                  fi
                 fi
 
                 # 3. HTTP 응답 없으면 로그 패턴 매칭으로 폴백
-                STARTED=$(echo $PW | sudo -S docker logs --tail 50 "${CONTAINER_NAME}" 2>&1 | grep -E "Uvicorn running on|Application startup complete" || echo "")
+                if [ -n "$LOG_PATTERN" ]; then
+                  STARTED=$(echo $PW | sudo -S docker logs --tail 50 "${CONTAINER_NAME}" 2>&1 | grep -E "$LOG_PATTERN" || echo "")
 
-                if [ -n "$STARTED" ]; then
-                  echo "✅ FastAPI 정상 기동 확인! (로그 패턴)"
-                  echo "   $STARTED"
-                  HEALTH_CHECK_PASSED=true
-                  HEALTH_CHECK_METHOD="Log"
-                  break
+                  if [ -n "$STARTED" ]; then
+                    echo "✅ 정상 기동 확인! (로그 패턴)"
+                    echo "   $STARTED"
+                    HEALTH_CHECK_PASSED=true
+                    HEALTH_CHECK_METHOD="Log"
+                    break
+                  fi
                 fi
               fi
 
@@ -982,9 +1017,20 @@ jobs:
             const projectName = '${{ env.PROJECT_NAME }}';
             const domainSuffix = '${{ env.PREVIEW_DOMAIN_SUFFIX }}';
             const previewPort = '${{ env.PREVIEW_PORT }}';
+            const apiDocsPath = '${{ env.API_DOCS_PATH }}';
             const issueNumber = ${{ needs.get-branch-from-issue.outputs.issue_number }};
             const domain = `${projectName}-pr-${issueNumber}.${domainSuffix}`;
             const previewUrl = `http://${domain}:${previewPort}`;
+
+            // Preview 환경 테이블 구성 (API_DOCS_PATH가 있을 때만 API Docs 행 추가)
+            const envRows = [
+              `| **Preview URL** | ${previewUrl} |`,
+            ];
+            if (apiDocsPath) {
+              envRows.push(`| **API Docs** | ${previewUrl}${apiDocsPath} |`);
+            }
+            envRows.push(`| **컨테이너** | \`${projectName}-pr-${issueNumber}\` |`);
+            envRows.push(`| **브랜치** | \`${branchName}\` |`);
 
             const body = [
               '## ✅ Issue Preview 배포 완료!',
@@ -999,10 +1045,7 @@ jobs:
               '### 🌐 Preview 환경',
               '| 항목 | 값 |',
               '|------|-----|',
-              `| **Preview URL** | ${previewUrl} |`,
-              `| **Swagger Docs** | ${previewUrl}/docs/swagger |`,
-              `| **컨테이너** | \`${projectName}-pr-${issueNumber}\` |`,
-              `| **브랜치** | \`${branchName}\` |`,
+              ...envRows,
               '',
               '### 📋 명령어',
               '| 명령어 | 설명 |',
