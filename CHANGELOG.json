@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "lastUpdated": "2026-01-11T15:07:27Z",
+    "currentVersion": "0.0.11",
+    "projectType": "python",
+    "totalReleases": 1
+  },
+  "releases": [
+    {
+      "version": "0.0.11",
+      "project_type": "python",
+      "date": "2026-01-11",
+      "pr_number": 7,
+      "raw_summary": "## Summary by CodeRabbit\n\n## 릴리스 노트\n\n* **새로운 기능**\n  * 테스트 API 엔드포인트 추가 (/api/test/scrape, /api/test/health)\n  * Instagram 콘텐츠 스크래핑 기능 추가 (게시물, 릴스, IGTV 지원)\n  * URL 분류 및 라우팅 기능 추가\n  \n* **문서**\n  * 개발자 문서를 한국어로 현지화\n\n* **버전 및 의존성**\n  * 버전 0.0.4 → 0.0.11로 업그레이드\n  * Playwright 브라우저 자동화 라이브러리 추가",
+      "parsed_changes": {
+        "새로운_기능": {
+          "title": "새로운 기능",
+          "items": [
+            "테스트 API 엔드포인트 추가 (/api/test/scrape, /api/test/health)",
+            "Instagram 콘텐츠 스크래핑 기능 추가 (게시물, 릴스, IGTV 지원)",
+            "URL 분류 및 라우팅 기능 추가"
+          ]
+        },
+        "문서": {
+          "title": "문서",
+          "items": [
+            "개발자 문서를 한국어로 현지화"
+          ]
+        },
+        "버전_및_의존성": {
+          "title": "버전 및 의존성",
+          "items": [
+            "버전 0.0.4 → 0.0.11로 업그레이드",
+            "Playwright 브라우저 자동화 라이브러리 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    }
+  ]
+}

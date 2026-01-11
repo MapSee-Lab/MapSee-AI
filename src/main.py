@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from src.core.logging import setup_logging
 from src.apis.place_router import router as place_router
+from src.apis.test_router import router as test_router
 
 # 로깅 초기화
 setup_logging(log_level="INFO")
@@ -45,6 +46,7 @@ app = FastAPI(
 
 # 라우터 등록
 app.include_router(place_router)
+app.include_router(test_router)
 
 
 @app.middleware("http")
