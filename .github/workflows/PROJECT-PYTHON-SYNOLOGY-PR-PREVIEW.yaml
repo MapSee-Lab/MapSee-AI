@@ -80,7 +80,7 @@ env:
 
   # Issue Helper 댓글 마커 (프로젝트별 수정 필요)
   # Issue 댓글에서 브랜치명을 추출할 때 사용
-  ISSUE_HELPER_MARKER: 'SUH-ISSUE-HELPER'
+  ISSUE_HELPER_MARKER: 'Guide by SUH-LAB'
 
 # ===================================================================
 # 트리거 설정
