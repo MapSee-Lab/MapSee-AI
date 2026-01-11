@@ -1140,13 +1140,11 @@ jobs:
   # -----------------------------------------------------------------
   destroy-preview:
     name: Preview 삭제
-    needs: check-command
+    # needs 의존성 제거: PR/Issue 닫힘 이벤트에서도 독립적으로 실행되도록 함
     if: |
-      always() && (
-        (github.event_name == 'issue_comment' && needs.check-command.outputs.is_valid == 'true' && needs.check-command.outputs.command == 'destroy') ||
-        (github.event_name == 'pull_request' && github.event.action == 'closed') ||
-        (github.event_name == 'issues' && github.event.action == 'closed')
-      )
+      (github.event_name == 'pull_request' && github.event.action == 'closed') ||
+      (github.event_name == 'issues' && github.event.action == 'closed') ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@suh-lab') && contains(github.event.comment.body, 'server destroy'))
     runs-on: ubuntu-latest
     steps:
       - name: PR/Issue 번호 가져오기
