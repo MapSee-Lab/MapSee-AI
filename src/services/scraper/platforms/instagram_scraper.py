@@ -74,26 +74,109 @@ class InstagramScraper:
 
     async def extract_instagram_image_urls(self) -> list[str]:
         """
-        Instagram 이미지 URL 추출 (cdninstagram.com 도메인만)
+        Instagram 게시글 이미지 URL 추출 (캐러셀 슬라이드 네비게이션 포함)
+
+        캐러셀의 경우 Next 버튼을 클릭하며 모든 이미지를 수집합니다.
 
         Returns:
-            list[str]: 이미지 URL 목록
+            list[str]: 게시글 이미지 URL 목록 (다른 게시글 썸네일 제외)
         """
-        image_urls = await self.browser_controller.page.evaluate('''() => {
-            const imgs = document.querySelectorAll('img[src*="cdninstagram.com"]');
-            const urls = [];
-            imgs.forEach(img => {
-                const src = img.src;
-                // 프로필 이미지 제외 (보통 작은 크기)
-                if (src && !src.includes('150x150') && !src.includes('44x44')) {
-                    urls.push(src);
-                }
-            });
-            // 중복 제거
-            return [...new Set(urls)];
+        page = self.browser_controller.page
+
+        # 1. 캐러셀 존재 여부 확인
+        has_carousel = await page.evaluate('''() => {
+            return !!document.querySelector('ul._acay');
         }''')
-        logger.info(f"이미지 URL 추출: {len(image_urls)}개")
+
+        if has_carousel:
+            # 2. 캐러셀: 슬라이드를 넘기며 모든 이미지 수집
+            image_urls = await self._extract_carousel_images()
+        else:
+            # 3. 단일 이미지: article 내 메인 이미지 추출
+            image_urls = await page.evaluate('''() => {
+                const article = document.querySelector('article');
+                if (!article) return [];
+
+                const mainImg = article.querySelector('div._aagv img[src*="cdninstagram.com"]');
+                return mainImg && mainImg.src ? [mainImg.src] : [];
+            }''')
+
+        logger.info(f"게시글 이미지 URL 추출: {len(image_urls)}개")
         return image_urls
+
+    async def _extract_carousel_images(self) -> list[str]:
+        """
+        캐러셀 슬라이드를 넘기며 모든 이미지 URL 수집 (순서 유지)
+
+        Returns:
+            list[str]: 캐러셀 내 모든 이미지 URL (게시글 순서대로)
+        """
+        import asyncio
+        page = self.browser_controller.page
+        collected_urls: list[str] = []  # 순서 유지를 위해 리스트 사용
+        seen_urls: set[str] = set()  # 중복 체크용
+
+        # 현재 로드된 이미지 수집 함수
+        async def collect_current_images():
+            urls = await page.evaluate('''() => {
+                const carousel = document.querySelector('ul._acay');
+                if (!carousel) return [];
+
+                const imgs = carousel.querySelectorAll('li._acaz img[src*="cdninstagram.com"]');
+                return Array.from(imgs).map(img => img.src).filter(Boolean);
+            }''')
+            for url in urls:
+                if url not in seen_urls:
+                    seen_urls.add(url)
+                    collected_urls.append(url)
+
+        # 초기 이미지 수집
+        await collect_current_images()
+
+        # 슬라이드 개수 확인 (인디케이터 도트로 확인)
+        total_slides = await page.evaluate('''() => {
+            // 캐러셀 인디케이터 도트 개수로 전체 슬라이드 수 확인
+            const dots = document.querySelectorAll('div._acnb');
+            return dots.length || 1;
+        }''')
+
+        logger.info(f"캐러셀 슬라이드 개수: {total_slides}")
+
+        # Next 버튼 클릭하며 이미지 수집
+        for i in range(total_slides - 1):
+            # JavaScript로 직접 Next 버튼 클릭 (가려진 요소 무시)
+            clicked = await page.evaluate('''() => {
+                const btn = document.querySelector('button[aria-label="Next"]');
+                if (btn) {
+                    btn.click();
+                    return true;
+                }
+                return false;
+            }''')
+
+            if not clicked:
+                break
+
+            await asyncio.sleep(0.4)  # 이미지 로드 대기
+            await collect_current_images()
+
+        return list(collected_urls)
+
+    async def extract_author_profile_image(self) -> str | None:
+        """
+        Instagram 작성자 프로필 이미지 URL 추출
+
+        Returns:
+            str | None: 작성자 프로필 이미지 URL 또는 None
+        """
+        author_profile_url = await self.browser_controller.page.evaluate('''() => {
+            // 프로필 이미지 셀렉터: alt 속성에 "profile picture" 포함
+            const profileImg = document.querySelector('img[alt*="profile picture"]');
+            return profileImg ? profileImg.src : null;
+        }''')
+        if author_profile_url:
+            logger.info("작성자 프로필 이미지 URL 추출 완료")
+        return author_profile_url
 
     async def scrape_instagram_post(self, url: str, classification: UrlClassification) -> dict:
         """
@@ -109,16 +192,16 @@ class InstagramScraper:
         Raises:
             HTTPException: 스크래핑 실패 시
         """
-        logger.info(f"[1/5] Instagram 스크래핑 시작: {url} (type={classification.content_type})")
+        logger.info(f"[1/6] Instagram 스크래핑 시작: {url} (type={classification.content_type})")
 
         async with async_playwright() as playwright:
             try:
-                # [2/5] 브라우저 생성
-                logger.info("[2/5] 브라우저 초기화...")
+                # [2/6] 브라우저 생성
+                logger.info("[2/6] 브라우저 초기화...")
                 await self.browser_controller.create_browser_and_context(playwright)
 
-                # [3/5] 페이지 로드
-                logger.info("[3/5] 페이지 로드...")
+                # [3/6] 페이지 로드
+                logger.info("[3/6] 페이지 로드...")
                 response = await self.browser_controller.load_page(url)
 
                 if response and response.status >= 400:
@@ -128,8 +211,8 @@ class InstagramScraper:
                         detail=f"Instagram 응답 오류: {response.status}"
                     )
 
-                # [4/5] 메타데이터 추출
-                logger.info("[4/5] 메타데이터 추출...")
+                # [4/6] 메타데이터 추출
+                logger.info("[4/6] 메타데이터 추출...")
                 open_graph_metadata = await self.browser_controller.extract_open_graph_tags()
 
                 # og:description 파싱
@@ -141,9 +224,13 @@ class InstagramScraper:
                     f"likes={parsed_metadata['likes_count']}, comments={parsed_metadata['comments_count']}"
                 )
 
-                # [5/5] 이미지 URL 추출
-                logger.info("[5/5] 이미지 URL 추출...")
+                # [5/6] 이미지 URL 추출
+                logger.info("[5/6] 게시글 이미지 URL 추출...")
                 image_urls = await self.extract_instagram_image_urls()
+
+                # [6/6] 작성자 프로필 이미지 URL 추출
+                logger.info("[6/6] 작성자 프로필 이미지 URL 추출...")
+                author_profile_image_url = await self.extract_author_profile_image()
 
                 return {
                     "platform": classification.platform,
@@ -156,7 +243,8 @@ class InstagramScraper:
                     "posted_at": parsed_metadata["posted_at"],
                     "hashtags": parsed_metadata["hashtags"],
                     "og_image": open_graph_metadata.get('image'),
-                    "image_urls": image_urls
+                    "image_urls": image_urls,
+                    "author_profile_image_url": author_profile_image_url
                 }
 
             except HTTPException:

@@ -1,11 +1,34 @@
 {
   "metadata": {
-    "lastUpdated": "2026-01-11T15:34:03Z",
-    "currentVersion": "0.1.1",
+    "lastUpdated": "2026-01-13T15:12:41Z",
+    "currentVersion": "0.1.2",
     "projectType": "python",
-    "totalReleases": 2
+    "totalReleases": 3
   },
   "releases": [
+    {
+      "version": "0.1.2",
+      "project_type": "python",
+      "date": "2026-01-13",
+      "pr_number": 10,
+      "raw_summary": "## Summary by CodeRabbit\n\n## 릴리스 노트\n\n* **새로운 기능**\n  * Instagram 게시물의 캐러셀 이미지를 모두 추출하도록 개선\n  * 작성자의 프로필 이미지 정보 추출 기능 추가\n\n* **기타**\n  * 버전 업데이트 및 메타데이터 갱신",
+      "parsed_changes": {
+        "새로운_기능": {
+          "title": "새로운 기능",
+          "items": [
+            "Instagram 게시물의 캐러셀 이미지를 모두 추출하도록 개선",
+            "작성자의 프로필 이미지 정보 추출 기능 추가"
+          ]
+        },
+        "기타": {
+          "title": "기타",
+          "items": [
+            "버전 업데이트 및 메타데이터 갱신"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.1.1",
       "project_type": "python",
