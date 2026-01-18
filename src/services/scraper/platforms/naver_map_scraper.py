@@ -2,7 +2,6 @@
 네이버 지도 장소 스크래핑 로직
 """
 import logging
-import asyncio
 from urllib.parse import quote
 
 from playwright.async_api import async_playwright
@@ -14,7 +13,6 @@ from src.services.scraper.common_util import (
     parse_rating,
     extract_naver_place_id_from_url,
     SCRAPE_TIMEOUT_MS,
-    PAGE_LOAD_WAIT_SEC,
     ELEMENT_WAIT_TIMEOUT_MS,
     MAX_IMAGE_COUNT,
 )
@@ -107,9 +105,8 @@ class NaverMapScraper:
 
                 logger.info("첫 번째 결과 클릭 완료, 상세 페이지 로드 대기...")
 
-                # [5/7] 상세 페이지 로드 대기
+                # [5/7] 상세 페이지 로드 대기 (entryIframe이 나타날 때까지)
                 logger.info("[5/7] 상세 페이지 로드 대기...")
-                await asyncio.sleep(PAGE_LOAD_WAIT_SEC)
 
                 # entryIframe 대기
                 logger.info("entryIframe 대기...")
@@ -149,8 +146,22 @@ class NaverMapScraper:
 
                 logger.debug(f"entry_frame URL: {entry_frame.url}")
 
-                # 추가 대기: DOM이 완전히 로드될 때까지
-                await asyncio.sleep(2)
+                # DOM 완전 로드 대기 (주소 요소가 나타날 때까지)
+                try:
+                    await entry_frame.wait_for_selector('span.LDgIH', timeout=ELEMENT_WAIT_TIMEOUT_MS)
+                except Exception:
+                    pass  # 주소가 없는 장소도 있으므로 무시
+
+                # "찾아가는 길" 더보기 버튼 클릭 (전체 텍스트 펼치기)
+                try:
+                    directions_expand_button = entry_frame.locator('a.xHaT3[aria-expanded="false"]')
+                    if await directions_expand_button.count() > 0:
+                        await directions_expand_button.first.click()
+                        # 펼쳐진 상태 대기
+                        await entry_frame.wait_for_selector('a.xHaT3[aria-expanded="true"]', timeout=2000)
+                        logger.debug("찾아가는 길 더보기 클릭 완료")
+                except Exception as error:
+                    logger.debug(f"찾아가는 길 더보기 클릭 실패 (무시): {error}")
 
                 # iframe 내에서 JavaScript 실행
                 info = await entry_frame.evaluate(f'''() => {{
@@ -204,8 +215,10 @@ class NaverMapScraper:
                     const subwayElement = document.querySelector('div.nZapA');
                     result.subway_info = subwayElement ? subwayElement.textContent.trim() : null;
 
-                    // 찾아가는 길
-                    const directionsElement = document.querySelector('span.zPfVt') ||
+                    // 찾아가는 길 (전체 텍스트 - 펼쳐진 상태 우선)
+                    const expandedDirections = document.querySelector('a.xHaT3[aria-expanded="true"] span.zPfVt');
+                    const directionsElement = expandedDirections ||
+                                              document.querySelector('span.zPfVt') ||
                                               document.querySelector('.place_section_content .zPfVt');
                     result.directions_text = directionsElement ? directionsElement.textContent.trim() : null;
 

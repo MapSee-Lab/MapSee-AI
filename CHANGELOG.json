@@ -1,11 +1,35 @@
 {
   "metadata": {
-    "lastUpdated": "2026-01-18T12:31:21Z",
-    "currentVersion": "1.0.1",
+    "lastUpdated": "2026-01-18T12:51:13Z",
+    "currentVersion": "1.0.2",
     "projectType": "python",
-    "totalReleases": 6
+    "totalReleases": 7
   },
   "releases": [
+    {
+      "version": "1.0.2",
+      "project_type": "python",
+      "date": "2026-01-18",
+      "pr_number": 17,
+      "raw_summary": "## Summary by CodeRabbit\n\n# 릴리스 노트\n\n* **Chores**\n  * 버전을 v1.0.2로 업데이트했습니다.\n  * 문서를 최신 버전 정보로 업데이트했습니다.\n\n* **Bug Fixes**\n  * 지도 데이터 수집 시 안정성을 개선했습니다.\n  * 주소 추출 로직을 강화하고 더 견고한 오류 처리를 추가했습니다.",
+      "parsed_changes": {
+        "chores": {
+          "title": "Chores",
+          "items": [
+            "버전을 v1.0.2로 업데이트했습니다.",
+            "문서를 최신 버전 정보로 업데이트했습니다."
+          ]
+        },
+        "bug_fixes": {
+          "title": "Bug Fixes",
+          "items": [
+            "지도 데이터 수집 시 안정성을 개선했습니다.",
+            "주소 추출 로직을 강화하고 더 견고한 오류 처리를 추가했습니다."
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "1.0.1",
       "project_type": "python",
