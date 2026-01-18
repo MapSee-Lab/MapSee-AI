@@ -1,11 +1,33 @@
 {
   "metadata": {
-    "lastUpdated": "2026-01-13T15:12:41Z",
-    "currentVersion": "0.1.2",
+    "lastUpdated": "2026-01-18T04:58:48Z",
+    "currentVersion": "0.1.3",
     "projectType": "python",
-    "totalReleases": 3
+    "totalReleases": 4
   },
   "releases": [
+    {
+      "version": "0.1.3",
+      "project_type": "python",
+      "date": "2026-01-18",
+      "pr_number": 13,
+      "raw_summary": "## Summary by CodeRabbit\n\n## 새 기능\n\n* Google 지도와 네이버 지도에서 장소 정보를 검색하고 수집하는 기능 추가\n* 새로운 API 엔드포인트를 통해 두 지도 서비스에서 장소명 검색 지원\n* 검색 결과로부터 주소, 평점, 영업 시간, 전화번호, 이미지 등의 상세 정보 추출",
+      "parsed_changes": {
+        "google_지도와_네이버_지도에서_장소_정보를_검색하고_수집하는_기능_추가": {
+          "title": "Google 지도와 네이버 지도에서 장소 정보를 검색하고 수집하는 기능 추가",
+          "items": []
+        },
+        "새로운_api_엔드포인트를_통해_두_지도_서비스에서_장소명_검색_지원": {
+          "title": "새로운 API 엔드포인트를 통해 두 지도 서비스에서 장소명 검색 지원",
+          "items": []
+        },
+        "검색_결과로부터_주소__평점__영업_시간__전화번호__이미지_등의_상세_정보_추출": {
+          "title": "검색 결과로부터 주소, 평점, 영업 시간, 전화번호, 이미지 등의 상세 정보 추출",
+          "items": []
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.1.2",
       "project_type": "python",
