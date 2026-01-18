@@ -1,11 +1,27 @@
 {
   "metadata": {
-    "lastUpdated": "2026-01-18T04:58:48Z",
+    "lastUpdated": "2026-01-18T12:11:27Z",
     "currentVersion": "0.1.3",
     "projectType": "python",
-    "totalReleases": 4
+    "totalReleases": 5
   },
   "releases": [
+    {
+      "version": "0.1.3",
+      "project_type": "python",
+      "date": "2026-01-18",
+      "pr_number": 14,
+      "raw_summary": "## Summary by CodeRabbit\n\n## 릴리스 노트\n\n* **문서**\n  * 최신 버전을 v0.1.3으로 업데이트했습니다.",
+      "parsed_changes": {
+        "문서": {
+          "title": "문서",
+          "items": [
+            "최신 버전을 v0.1.3으로 업데이트했습니다."
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.1.3",
       "project_type": "python",
