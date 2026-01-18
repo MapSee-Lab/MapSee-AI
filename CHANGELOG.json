@@ -1,11 +1,36 @@
 {
   "metadata": {
-    "lastUpdated": "2026-01-18T12:11:27Z",
-    "currentVersion": "0.1.3",
+    "lastUpdated": "2026-01-18T12:31:21Z",
+    "currentVersion": "1.0.1",
     "projectType": "python",
-    "totalReleases": 5
+    "totalReleases": 6
   },
   "releases": [
+    {
+      "version": "1.0.1",
+      "project_type": "python",
+      "date": "2026-01-18",
+      "pr_number": 15,
+      "raw_summary": "## Summary by CodeRabbit\n\n* **새로운 기능**\n  * Geocoding API 엔드포인트 추가 - 주소를 좌표(위도/경도)로 변환\n  * 카카오맵 및 Nominatim 제공자 지원\n  * 다중 제공자 자동 폴백 기능\n  * 장소 정보의 누락된 좌표 자동 채우기\n\n* **업데이트**\n  * 버전 1.0.1 출시",
+      "parsed_changes": {
+        "새로운_기능": {
+          "title": "새로운 기능",
+          "items": [
+            "Geocoding API 엔드포인트 추가 - 주소를 좌표(위도/경도)로 변환",
+            "카카오맵 및 Nominatim 제공자 지원",
+            "다중 제공자 자동 폴백 기능",
+            "장소 정보의 누락된 좌표 자동 채우기"
+          ]
+        },
+        "업데이트": {
+          "title": "업데이트",
+          "items": [
+            "버전 1.0.1 출시"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.1.3",
       "project_type": "python",
