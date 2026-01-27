@@ -1,11 +1,40 @@
 {
   "metadata": {
-    "lastUpdated": "2026-01-27T07:12:32Z",
-    "currentVersion": "1.0.7",
+    "lastUpdated": "2026-01-27T07:51:45Z",
+    "currentVersion": "1.0.8",
     "projectType": "python",
-    "totalReleases": 9
+    "totalReleases": 10
   },
   "releases": [
+    {
+      "version": "1.0.8",
+      "project_type": "python",
+      "date": "2026-01-27",
+      "pr_number": 21,
+      "raw_summary": "## Summary by CodeRabbit\n\n## 릴리스 노트\n\n* **새로운 기능**\n  * SNS 콘텐츠에서 통합 장소 검색 기능 추가\n  * Instagram 링크를 기반으로 장소명 자동 추출 및 지도 검색 수행\n\n* **개선 사항**\n  * 장소명 추출 알고리즘 정확도 향상\n\n* **문서**\n  * 버전 1.0.8로 업데이트",
+      "parsed_changes": {
+        "새로운_기능": {
+          "title": "새로운 기능",
+          "items": [
+            "SNS 콘텐츠에서 통합 장소 검색 기능 추가",
+            "Instagram 링크를 기반으로 장소명 자동 추출 및 지도 검색 수행"
+          ]
+        },
+        "개선_사항": {
+          "title": "개선 사항",
+          "items": [
+            "장소명 추출 알고리즘 정확도 향상"
+          ]
+        },
+        "문서": {
+          "title": "문서",
+          "items": [
+            "버전 1.0.8로 업데이트"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "1.0.7",
       "project_type": "python",

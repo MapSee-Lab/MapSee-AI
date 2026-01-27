@@ -18,6 +18,7 @@ from src.services.geocoding_service import (
     geocode_with_nominatim
 )
 from src.services.modules.ollama_llm import extract_place_names_with_ollama, OllamaPlaceResult
+from src.models.integrated_search import SnsInfo, IntegratedPlaceSearchResponse
 from src.core.exceptions import CustomError
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,11 @@ class GoogleMapSearchRequest(BaseModel):
 class LlmPlaceExtractRequest(BaseModel):
     """LLM 장소명 추출 요청"""
     caption: str = Field(..., description="인스타그램 게시물 본문 텍스트", min_length=1)
+
+
+class IntegratedSearchRequest(BaseModel):
+    """통합 장소 검색 요청"""
+    url: str = Field(..., description="Instagram URL")
 
 
 @router.post("/scrape", status_code=200)
@@ -174,3 +180,105 @@ async def extract_place_names(request: LlmPlaceExtractRequest):
 
     logger.info(f"장소명 추출 완료: {result.place_names}")
     return result
+
+
+@router.post("/integrated-place-search", response_model=IntegratedPlaceSearchResponse, status_code=200)
+async def integrated_place_search(request: IntegratedSearchRequest):
+    """
+    Instagram URL에서 장소 정보를 통합 추출
+
+    전체 파이프라인:
+    1. Instagram 파싱 → caption 추출
+    2. Ollama LLM → 장소명 추출
+    3. 네이버 지도 검색 → 상세 정보
+
+    - POST /api/test/integrated-place-search
+    - Body: {"url": "https://www.instagram.com/p/..."}
+    - 성공: 200 + IntegratedPlaceSearchResponse
+    - 실패: 400 (Instagram 파싱 실패)
+
+    네이버 지도 검색은 개별 실패 허용 (failed_searches에 기록)
+    """
+    # Step 1: 요청 수신
+    logger.info(f"[통합 검색] Step 1/5: 요청 수신 - url={request.url}")
+
+    # Step 2: Instagram 파싱
+    logger.info("[통합 검색] Step 2/5: Instagram 파싱 시작")
+    try:
+        sns_data = await route_and_scrape(request.url)
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.info(f"[통합 검색] Step 2/5: Instagram 파싱 실패 - {error}")
+        raise HTTPException(status_code=400, detail=f"Instagram 파싱 실패: {error}")
+
+    # SNS 정보 구성
+    sns_info = SnsInfo(
+        platform=sns_data.get("platform", "unknown"),
+        content_type=sns_data.get("content_type", "unknown"),
+        url=sns_data.get("url", request.url),
+        author=sns_data.get("author"),
+        caption=sns_data.get("caption"),
+        likes_count=sns_data.get("likes_count"),
+        comments_count=sns_data.get("comments_count"),
+        posted_at=sns_data.get("posted_at"),
+        hashtags=sns_data.get("hashtags", []),
+        og_image=sns_data.get("og_image"),
+        image_urls=sns_data.get("image_urls", []),
+        author_profile_image_url=sns_data.get("author_profile_image_url")
+    )
+
+    caption = sns_data.get("caption") or ""
+    logger.info(f"[통합 검색] Step 2/5: Instagram 파싱 완료 - author={sns_info.author}, caption 길이={len(caption)}")
+
+    # Step 3: LLM 장소 추출
+    logger.info(f"[통합 검색] Step 3/5: LLM 장소 추출 시작 - caption 길이={len(caption)}")
+
+    if not caption.strip():
+        logger.info("[통합 검색] Step 3/5: caption이 비어있어 장소 추출 스킵")
+        extracted_place_names = []
+        has_places = False
+    else:
+        llm_result = await extract_place_names_with_ollama(caption)
+        extracted_place_names = llm_result.place_names
+        has_places = llm_result.has_places
+
+    logger.info(f"[통합 검색] Step 3/5: LLM 장소 추출 완료 - 추출된 장소 수={len(extracted_place_names)}")
+
+    # Step 4: 네이버 지도 검색
+    place_details = []
+    failed_searches = []
+
+    if extracted_place_names:
+        logger.info(f"[통합 검색] Step 4/5: 네이버 지도 검색 시작 - 검색할 장소 수={len(extracted_place_names)}")
+        scraper = NaverMapScraper()
+
+        for index, place_name in enumerate(extracted_place_names, 1):
+            logger.info(f"[통합 검색] Step 4/5: 네이버 지도 검색 ({index}/{len(extracted_place_names)}) - query={place_name}")
+            try:
+                place_info = await scraper.search_and_scrape(place_name)
+                place_details.append(place_info)
+                logger.info(f"[통합 검색] Step 4/5: 검색 성공 - {place_info.name} ({place_info.place_id})")
+            except Exception as error:
+                logger.info(f"[통합 검색] Step 4/5: 검색 실패 - query={place_name}, error={error}")
+                failed_searches.append(place_name)
+
+        logger.info(f"[통합 검색] Step 4/5: 네이버 지도 검색 완료 - 성공={len(place_details)}, 실패={len(failed_searches)}")
+    else:
+        logger.info("[통합 검색] Step 4/5: 추출된 장소가 없어 네이버 지도 검색 스킵")
+
+    # Step 5: 결과 통합
+    total_extracted = len(extracted_place_names)
+    total_found = len(place_details)
+
+    logger.info(f"[통합 검색] Step 5/5: 결과 통합 완료 - 총 추출={total_extracted}, 총 발견={total_found}")
+
+    return IntegratedPlaceSearchResponse(
+        sns_info=sns_info,
+        extracted_place_names=extracted_place_names,
+        has_places=has_places,
+        place_details=place_details,
+        total_extracted=total_extracted,
+        total_found=total_found,
+        failed_searches=failed_searches
+    )
