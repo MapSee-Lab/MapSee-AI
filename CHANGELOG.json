@@ -1,11 +1,36 @@
 {
   "metadata": {
-    "lastUpdated": "2026-01-18T15:27:46Z",
-    "currentVersion": "1.0.3",
+    "lastUpdated": "2026-01-27T07:12:32Z",
+    "currentVersion": "1.0.7",
     "projectType": "python",
-    "totalReleases": 8
+    "totalReleases": 9
   },
   "releases": [
+    {
+      "version": "1.0.7",
+      "project_type": "python",
+      "date": "2026-01-27",
+      "pr_number": 20,
+      "raw_summary": "## Summary by CodeRabbit\n\n## 릴리스 노트\n\n* **New Features**\n  * Ollama LLM을 활용한 장소명 자동 추출 API 기능 추가\n  * Git 워크트리 자동 생성 및 관리 도구 추가\n  * GitHub 이슈/PR과 프로젝트 상태 자동 동기화 기능 추가\n\n* **Chores**\n  * 버전 업데이트 (v1.0.7)\n  * 설정 및 문서 업데이트",
+      "parsed_changes": {
+        "new_features": {
+          "title": "New Features",
+          "items": [
+            "Ollama LLM을 활용한 장소명 자동 추출 API 기능 추가",
+            "Git 워크트리 자동 생성 및 관리 도구 추가",
+            "GitHub 이슈/PR과 프로젝트 상태 자동 동기화 기능 추가"
+          ]
+        },
+        "chores": {
+          "title": "Chores",
+          "items": [
+            "버전 업데이트 (v1.0.7)",
+            "설정 및 문서 업데이트"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "1.0.3",
       "project_type": "python",
